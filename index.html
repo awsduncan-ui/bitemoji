@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UTF-8 Emoji Switches (Minimal)</title>
+  <style>
+    :root {
+      --bg: #f3efe6;
+      --panel: #e4dccf;
+      --plate: #f8f5ee;
+      --line: #c5b9a5;
+      --text: #2a2824;
+      --muted: #6b665c;
+      --accent: #2b6ef3;
+      --on: #f4e49e;
+      --off: #f0f0f0;
+      --shadow: 0 10px 24px rgba(40, 34, 24, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(43, 110, 243, 0.06), transparent 35%),
+        radial-gradient(circle at 85% 15%, rgba(244, 228, 158, 0.35), transparent 45%),
+        var(--bg);
+      padding: 14px;
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .top {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.35);
+    }
+
+    .top h1 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 14px 6px;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: #fffdf8;
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .btn:focus-visible,
+    .switch-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .emoji-panel {
+      display: grid;
+      place-items: center;
+      min-height: 170px;
+      margin: 0 14px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.35));
+    }
+
+    .emoji {
+      font-size: clamp(4rem, 14vw, 8rem);
+      line-height: 1;
+      user-select: none;
+    }
+
+    .emoji.invalid {
+      opacity: 0.35;
+      filter: grayscale(1);
+    }
+
+    .bytes {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0 14px 14px;
+    }
+
+    .byte {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.35);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .byte-title {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .switch-row {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 6px;
+      align-items: start;
+    }
+
+    .switch-cell {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+    }
+
+    .bit-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .switch-btn {
+      width: 100%;
+      min-width: 28px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      display: grid;
+      justify-items: center;
+    }
+
+    .light-switch {
+      width: 26px;
+      height: 54px;
+      border-radius: 7px;
+      border: 1px solid #b9b09f;
+      background: linear-gradient(180deg, #f4f1ea, #e4ddd1);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.9),
+        inset 0 -1px 0 rgba(0,0,0,0.04),
+        0 1px 2px rgba(0,0,0,0.08);
+      position: relative;
+      display: block;
+    }
+
+    .light-switch::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      top: 3px;
+      height: 24px;
+      border-radius: 5px;
+      background: linear-gradient(180deg, var(--off), #ddd8cf);
+      border: 1px solid #c9c1b2;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+      transition: top 110ms ease, background 110ms ease;
+    }
+
+    .switch-btn[aria-pressed="true"] .light-switch::before {
+      top: 26px;
+      background: linear-gradient(180deg, var(--on), #e7ce63);
+      border-color: #d4b54f;
+    }
+
+    .switch-val {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .switch-btn[aria-pressed="true"] .switch-val {
+      color: #7a6310;
+      font-weight: 600;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 960px) {
+      .bytes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 580px) {
+      .bytes { grid-template-columns: 1fr; }
+      .top { flex-direction: column; align-items: flex-start; }
+      .light-switch { width: 24px; height: 48px; }
+      .light-switch::before { height: 20px; }
+      .switch-btn[aria-pressed="true"] .light-switch::before { top: 23px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="top">
+        <h1>UTF-8 Emoji Switches (Minimal)</h1>
+        <div aria-hidden="true" style="color: var(--muted); font-size: 0.85rem;">Switch down = 0, up = 1</div>
+      </div>
+
+      <div class="controls">
+        <button id="set-grin" class="btn" type="button">Set 😀</button>
+        <button id="random" class="btn" type="button">Random emoji</button>
+        <button id="clear" class="btn" type="button">Clear</button>
+      </div>
+
+      <div class="emoji-panel">
+        <div id="emoji" class="emoji invalid" aria-live="polite">◌</div>
+      </div>
+
+      <div id="bytes" class="bytes" aria-label="32 UTF-8 bit switches"></div>
+      <div id="sr-status" class="sr-only" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    // Minimal version: same strict UTF-8 validation, visual output is only the emoji area.
+    // Examples:
+    // - F0 9F 98 80 -> 😀 (U+1F600)
+    // - F0 28 8C 28 -> invalid UTF-8
+
+    const bytes = new Uint8Array(4);
+    const byteViews = [];
+    const emojiEl = document.getElementById("emoji");
+    const srStatusEl = document.getElementById("sr-status");
+    const emojiPresets = [
+      [0xF0, 0x9F, 0x98, 0x80], // 😀
+      [0xF0, 0x9F, 0x9A, 0x80], // 🚀
+      [0xF0, 0x9F, 0x8E, 0x89], // 🎉
+      [0xF0, 0x9F, 0x8D, 0x95], // 🍕
+      [0xF0, 0x9F, 0x90, 0xB6], // 🐶
+      [0xF0, 0x9F, 0x8C, 0x9F], // 🌟
+    ];
+
+    function isContinuationByte(v) {
+      return (v & 0xC0) === 0x80;
+    }
+
+    function decodeUtf8Strict(inputBytes) {
+      const codePoints = [];
+      let i = 0;
+      while (i < inputBytes.length) {
+        const b1 = inputBytes[i];
+        if (b1 <= 0x7F) {
+          codePoints.push(b1);
+          i += 1;
+          continue;
+        }
+        if ((b1 & 0xE0) === 0xC0) {
+          if (i + 1 >= inputBytes.length) return { valid: false };
+          const b2 = inputBytes[i + 1];
+          if (!isContinuationByte(b2)) return { valid: false };
+          const cp = ((b1 & 0x1F) << 6) | (b2 & 0x3F);
+          if (cp < 0x80) return { valid: false };
+          codePoints.push(cp);
+          i += 2;
+          continue;
+        }
+        if ((b1 & 0xF0) === 0xE0) {
+          if (i + 2 >= inputBytes.length) return { valid: false };
+          const b2 = inputBytes[i + 1];
+          const b3 = inputBytes[i + 2];
+          if (!isContinuationByte(b2) || !isContinuationByte(b3)) return { valid: false };
+          const cp = ((b1 & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
+          if (cp < 0x800) return { valid: false };
+          if (cp >= 0xD800 && cp <= 0xDFFF) return { valid: false };
+          codePoints.push(cp);
+          i += 3;
+          continue;
+        }
+        if ((b1 & 0xF8) === 0xF0) {
+          if (i + 3 >= inputBytes.length) return { valid: false };
+          const b2 = inputBytes[i + 1];
+          const b3 = inputBytes[i + 2];
+          const b4 = inputBytes[i + 3];
+          if (!isContinuationByte(b2) || !isContinuationByte(b3) || !isContinuationByte(b4)) return { valid: false };
+          const cp = ((b1 & 0x07) << 18) | ((b2 & 0x3F) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
+          if (cp < 0x10000 || cp > 0x10FFFF) return { valid: false };
+          codePoints.push(cp);
+          i += 4;
+          continue;
+        }
+        return { valid: false };
+      }
+      return { valid: true, codePoints };
+    }
+
+    function render() {
+      for (let byteIndex = 0; byteIndex < 4; byteIndex += 1) {
+        for (const btn of byteViews[byteIndex]) {
+          const bit = Number(btn.dataset.bit);
+          const on = ((bytes[byteIndex] >> bit) & 1) === 1;
+          btn.setAttribute("aria-pressed", String(on));
+          btn.setAttribute("aria-label", `Byte ${byteIndex + 1} bit ${bit}, value ${on ? 1 : 0}`);
+          btn.querySelector(".switch-val").textContent = on ? "1" : "0";
+        }
+      }
+
+      const result = decodeUtf8Strict(bytes);
+      if (!result.valid || result.codePoints.length !== 1) {
+        emojiEl.textContent = "◌";
+        emojiEl.classList.add("invalid");
+        srStatusEl.textContent = !result.valid
+          ? "Invalid UTF-8 sequence"
+          : "Valid UTF-8 but not exactly one code point";
+        return;
+      }
+
+      emojiEl.textContent = String.fromCodePoint(result.codePoints[0]);
+      emojiEl.classList.remove("invalid");
+      srStatusEl.textContent = "Valid UTF-8 emoji or character displayed";
+    }
+
+    function setBytes(vals) {
+      for (let i = 0; i < 4; i += 1) bytes[i] = vals[i] ?? 0;
+      render();
+    }
+
+    function buildSwitches() {
+      const root = document.getElementById("bytes");
+      for (let byteIndex = 0; byteIndex < 4; byteIndex += 1) {
+        const section = document.createElement("section");
+        section.className = "byte";
+
+        const title = document.createElement("h2");
+        title.className = "byte-title";
+        title.textContent = `Byte ${byteIndex + 1}`;
+        section.appendChild(title);
+
+        const row = document.createElement("div");
+        row.className = "switch-row";
+        const buttons = [];
+
+        for (let bit = 7; bit >= 0; bit -= 1) {
+          const cell = document.createElement("div");
+          cell.className = "switch-cell";
+
+          const label = document.createElement("div");
+          label.className = "bit-label";
+          label.textContent = bit;
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "switch-btn";
+          btn.dataset.bit = String(bit);
+          btn.setAttribute("aria-pressed", "false");
+          btn.innerHTML = '<span class="light-switch" aria-hidden="true"></span><span class="switch-val" aria-hidden="true">0</span>';
+          btn.addEventListener("click", () => {
+            bytes[byteIndex] ^= (1 << bit);
+            render();
+          });
+
+          cell.append(label, btn);
+          row.appendChild(cell);
+          buttons.push(btn);
+        }
+
+        section.appendChild(row);
+        root.appendChild(section);
+        byteViews.push(buttons);
+      }
+    }
+
+    document.getElementById("set-grin").addEventListener("click", () => setBytes([0xF0, 0x9F, 0x98, 0x80]));
+    document.getElementById("clear").addEventListener("click", () => setBytes([0x00, 0x00, 0x00, 0x00]));
+    document.getElementById("random").addEventListener("click", () => {
+      const choice = emojiPresets[Math.floor(Math.random() * emojiPresets.length)];
+      setBytes(choice);
+    });
+
+    buildSwitches();
+    setBytes([0x00, 0x00, 0x00, 0x00]);
+  </script>
+</body>
+</html>
